@@ -105,17 +105,6 @@ def _format_duration(seconds: Any) -> str | None:
     return f"{minutes}:{secs:02d}"
 
 
-def _split_list(value: str | None) -> list[str]:
-    if value is None:
-        return []
-    separators = [",", ";", "\n", "/"]
-    normalized = value
-    for separator in separators[1:]:
-        normalized = normalized.replace(separator, separators[0])
-    parts = [item.strip() for item in normalized.split(separators[0])]
-    return [item for item in parts if item]
-
-
 def _activity_type_key(activity: dict[str, Any]) -> str:
     activity_type = activity.get("activityType")
     if isinstance(activity_type, dict):

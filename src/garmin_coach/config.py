@@ -19,10 +19,6 @@ def tokenstore_has_tokens(tokenstore_path: Path) -> bool:
     return all((tokenstore_path / filename).exists() for filename in required_files)
 
 
-def _to_bool(value: str | None, default: bool) -> bool:
-    if value is None:
-        return default
-    return value.strip().lower() in {"1", "true", "yes", "on"}
 def _to_int(value: str | None, default: int) -> int:
     if value is None or not value.strip():
         return default
@@ -54,7 +50,6 @@ class Settings:
     log_level: str
     retries: int
     retry_backoff_seconds: float
-    coach_recalibration_days: int = 21
 
     def ensure_runtime_dirs(self) -> None:
         """Create local directories used by the project."""
@@ -103,10 +98,6 @@ def load_settings(env_file: str | Path | None = None) -> Settings:
         retries=_to_int(os.getenv("GARMIN_RETRIES"), 3),
         retry_backoff_seconds=_to_float(
             os.getenv("GARMIN_RETRY_BACKOFF_SECONDS"), 1.5
-        ),
-        coach_recalibration_days=_to_int(
-            os.getenv("GARMIN_COACH_RECALIBRATION_DAYS"),
-            21,
         ),
     )
     settings.ensure_runtime_dirs()
