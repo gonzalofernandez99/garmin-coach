@@ -296,6 +296,34 @@ def _seed_raw_data(store: RawJsonStore) -> None:
         {"activityId": 101, "splitSummaries": []},
     )
     store.save_json(
+        "activities/by_id/101/splits.json",
+        {
+            "activityId": 101,
+            "lapDTOs": [
+                {
+                    "lapIndex": 1,
+                    "distance": 5000.0,
+                    "duration": 900.0,
+                    "averageHR": 120.0,
+                    "maxHR": 132.0,
+                    "averageSpeed": 5.5555555556,
+                    "elevationGain": 18.0,
+                    "elevationLoss": 8.0,
+                },
+                {
+                    "lapIndex": 2,
+                    "distance": 5000.0,
+                    "duration": 870.0,
+                    "averageHR": 128.0,
+                    "maxHR": 140.0,
+                    "averageSpeed": 5.7471264368,
+                    "elevationGain": 22.0,
+                    "elevationLoss": 10.0,
+                },
+            ],
+        },
+    )
+    store.save_json(
         "activities/by_id/101/details.json",
         {"activityDetailMetrics": [{"metrics": [0.0, 110.0, 0.0, 1771844784000.0]}]},
     )
@@ -348,6 +376,97 @@ def _seed_raw_data(store: RawJsonStore) -> None:
     store.save_json(
         "activities/by_id/202/details.json",
         {"activityDetailMetrics": [{"metrics": [0.0, 130.0, 0.0, 1771844784000.0]}]},
+    )
+    store.save_json(
+        "activities/by_id/202/splits.json",
+        {
+            "activityId": 202,
+            "lapDTOs": [
+                {
+                    "lapIndex": 1,
+                    "distance": 1000.0,
+                    "duration": 300.0,
+                    "averageHR": 140.0,
+                    "maxHR": 148.0,
+                    "averageSpeed": 3.3333333333,
+                    "averageRunCadence": 164.0,
+                    "averagePower": 250.0,
+                    "normalizedPower": 255.0,
+                },
+                {
+                    "lapIndex": 2,
+                    "distance": 1000.0,
+                    "duration": 295.0,
+                    "averageHR": 145.0,
+                    "maxHR": 154.0,
+                    "averageSpeed": 3.3898305085,
+                    "averageRunCadence": 166.0,
+                    "averagePower": 255.0,
+                    "normalizedPower": 260.0,
+                },
+            ],
+        },
+    )
+    store.save_json(
+        "activities/by_id/303/list_entry.json",
+        {
+            "activityId": 303,
+            "activityName": "Natacion tecnica",
+            "activityTrainingLoad": 38.0,
+            "activityType": {"typeKey": "lap_swimming"},
+            "averageHR": 112.0,
+            "maxHR": 136.0,
+            "averageSwimCadenceInStrokesPerMinute": 25.0,
+            "distance": 400.0,
+            "duration": 520.0,
+            "movingDuration": 500.0,
+            "startTimeLocal": "2026-03-21 07:00:00",
+            "poolLength": 2500.0,
+            "activeLengths": 16,
+            "strokes": 180,
+            "averageSwolf": 39.0,
+            "calories": 210.0,
+            "trainingEffectLabel": "RECOVERY",
+        },
+    )
+    store.save_json(
+        "activities/by_id/303/split_summaries.json",
+        {"activityId": 303, "splitSummaries": []},
+    )
+    store.save_json(
+        "activities/by_id/303/splits.json",
+        {
+            "activityId": 303,
+            "lapDTOs": [
+                {
+                    "lapIndex": 1,
+                    "distance": 200.0,
+                    "duration": 220.0,
+                    "averageHR": 110.0,
+                    "maxHR": 120.0,
+                    "averageSpeed": 0.9090909091,
+                    "averageSWOLF": 38.0,
+                    "averageSwimCadence": 25.0,
+                    "averageStrokes": 11.5,
+                    "lengthDTOs": [{}, {}, {}, {}, {}, {}, {}, {}],
+                },
+                {
+                    "lapIndex": 2,
+                    "distance": 0.0,
+                    "duration": 30.0,
+                    "averageHR": 108.0,
+                    "maxHR": 111.0,
+                    "averageSpeed": 0.0,
+                    "averageSWOLF": 0.0,
+                    "averageSwimCadence": 0.0,
+                    "lengthDTOs": [],
+                },
+            ],
+        },
+    )
+    store.save_json(
+        "activities/by_id/303/details.json",
+        {"activityDetailMetrics": [{"metrics": [0.0, 100.0, 0.0, 1771844784000.0]}]},
     )
 
 
@@ -539,7 +658,7 @@ class CoachServiceTest(unittest.TestCase):
             service = CoachService(settings)
             result = service.build_activity_summaries()
 
-            self.assertEqual(result["activity_count"], 2)
+            self.assertEqual(result["activity_count"], 3)
             bike_path = (
                 settings.summaries_dir
                 / "activities"
@@ -561,6 +680,16 @@ class CoachServiceTest(unittest.TestCase):
             self.assertEqual(run_payload["activity_start_local"], "2026-03-22T08:15:00")
             self.assertEqual(run_payload["overview"]["distance_km"], 12.0)
             self.assertEqual(len(run_payload["split_summaries"]), 1)
+            self.assertEqual(len(run_payload["segment_breakdown"]), 2)
+            self.assertEqual(run_payload["segment_breakdown"][0]["label"], "km 1")
+            self.assertEqual(
+                run_payload["segment_breakdown"][0]["pace_per_km_display"],
+                "5:00/km",
+            )
+            self.assertEqual(
+                run_payload["segment_breakdown"][0]["average_hr"],
+                140.0,
+            )
 
     def test_build_activity_summaries_for_single_activity(self) -> None:
         with TemporaryDirectory() as tmpdir:
@@ -586,6 +715,66 @@ class CoachServiceTest(unittest.TestCase):
             self.assertEqual(payload["activity_start_local"], "2026-03-24T10:46:17")
             self.assertEqual(payload["overview"]["training_effect_label"], "AEROBIC_BASE")
             self.assertIn("list_entry.json", payload["available_raw_files"])
+            self.assertEqual(payload["segment_breakdown"][0]["label"], "lap 1")
+            self.assertEqual(
+                payload["segment_breakdown"][0]["average_speed_kmh"],
+                20.0,
+            )
+            self.assertEqual(payload["segment_breakdown"][0]["average_hr"], 120.0)
+
+    def test_build_activity_summaries_filtered_by_date_range(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            settings = _build_settings(Path(tmpdir))
+            settings.ensure_runtime_dirs()
+            store = RawJsonStore(settings.raw_dir)
+            _seed_raw_data(store)
+
+            service = CoachService(settings)
+            result = service.build_activity_summaries(
+                start_date="2026-03-22",
+                end_date="2026-03-24",
+            )
+
+            self.assertEqual(result["activity_count"], 2)
+            self.assertEqual(result["start_date"], "2026-03-22")
+            self.assertEqual(result["end_date"], "2026-03-24")
+            saved_paths = {Path(item["path"]).name for item in result["items"]}
+            self.assertEqual(
+                saved_paths,
+                {
+                    "2026-03-22_08-15-00_rodaje_202.json",
+                    "2026-03-24_10-46-17_lanus-ciclismo-en-ruta_101.json",
+                },
+            )
+
+    def test_build_activity_summary_includes_swim_laps_and_rest_segments(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            settings = _build_settings(Path(tmpdir))
+            settings.ensure_runtime_dirs()
+            store = RawJsonStore(settings.raw_dir)
+            _seed_raw_data(store)
+
+            service = CoachService(settings)
+            result = service.build_activity_summaries(activity_id="303")
+
+            self.assertEqual(result["activity_count"], 1)
+            payload = json.loads(
+                (
+                    settings.summaries_dir
+                    / "activities"
+                    / "by_date"
+                    / "2026-03-21_07-00-00_natacion-tecnica_303.json"
+                ).read_text(encoding="utf-8")
+            )
+            self.assertEqual(payload["discipline"], "swim")
+            self.assertTrue(payload["data_quality"]["has_segment_breakdown"])
+            self.assertEqual(payload["segment_breakdown"][0]["label"], "lap 1")
+            self.assertEqual(
+                payload["segment_breakdown"][0]["pace_per_100m_display"],
+                "1:50/100m",
+            )
+            self.assertEqual(payload["segment_breakdown"][0]["length_count"], 8)
+            self.assertTrue(payload["segment_breakdown"][1]["is_rest"])
 
 
 if __name__ == "__main__":

@@ -110,11 +110,17 @@ class CoachService:
         self,
         *,
         activity_id: str | None = None,
+        activity_ids: list[str] | None = None,
         limit: int | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
     ) -> dict[str, Any]:
         """Build and persist cleaned JSON summaries for synced activities."""
 
         return self.activity_summary_builder.build_and_save_activity_summaries(
             activity_id=activity_id,
+            activity_ids=activity_ids,
             limit=limit,
+            start_date=start_date,
+            end_date=end_date,
         )

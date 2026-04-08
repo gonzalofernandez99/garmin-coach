@@ -93,6 +93,27 @@ Sync 30 days, build one `medium` export, and summarize each activity:
 garmin-coach sync-last-30-days --end-date 2026-03-24 --days 30 --build-exports --export-level medium --build-activity-summaries
 ```
 
+Sync up to a cutoff date and choose how many days back to fetch:
+
+```bash
+garmin-coach sync-last-30-days --end-date 2026-04-01 --days 7
+```
+
+That fetches an inclusive window from `2026-03-26` through `2026-04-01`.
+
+Sync yesterday and today, while also building the daily summary and date-scoped activity summaries:
+
+```bash
+garmin-coach sync-last-30-days --end-date 2026-04-01 --days 2 --build-exports --export-level medium --build-activity-summaries
+```
+
+If you prefer to run each day separately:
+
+```bash
+garmin-coach sync-daily --date 2026-03-31 --build-exports --export-level medium --build-activity-summaries
+garmin-coach sync-daily --date 2026-04-01 --build-exports --export-level medium --build-activity-summaries
+```
+
 Build the derived Garmin context:
 
 ```bash
@@ -111,6 +132,18 @@ Build summaries for all synced activities:
 
 ```bash
 garmin-coach activities-build-summaries
+```
+
+Build activity summaries for a date range:
+
+```bash
+garmin-coach activities-build-summaries --start-date 2026-03-31 --end-date 2026-04-01
+```
+
+Build activity summaries for a single date:
+
+```bash
+garmin-coach activities-build-summaries --date 2026-04-01
 ```
 
 Build the summary for a single activity:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import timedelta
 import json
 from typing import Any
 
@@ -16,7 +17,7 @@ from .storage.raw_store import RawJsonStore
 from .storage.sqlite_store import SqliteIndex
 from .sync.activities import ActivitySyncService
 from .sync.daily import DailySyncService
-from .utils.dates import today_utc
+from .utils.dates import parse_iso_date, today_utc
 from .workouts.running import RunningWorkoutService
 
 
@@ -200,6 +201,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optional activity id to summarize. Defaults to all synced activities.",
     )
     activity_summaries.add_argument(
+        "--date",
+        default=None,
+        help="Optional single calendar date in YYYY-MM-DD format.",
+    )
+    activity_summaries.add_argument(
+        "--start-date",
+        default=None,
+        help="Optional start date in YYYY-MM-DD format.",
+    )
+    activity_summaries.add_argument(
+        "--end-date",
+        default=None,
+        help="Optional end date in YYYY-MM-DD format.",
+    )
+    activity_summaries.add_argument(
         "--limit",
         type=int,
         default=None,
@@ -308,7 +324,10 @@ def main() -> int:
                     window_days=1,
                 )
             if args.build_activity_summaries:
-                result["activity_summaries"] = coach_service.build_activity_summaries()
+                result["activity_summaries"] = coach_service.build_activity_summaries(
+                    start_date=args.date,
+                    end_date=args.date,
+                )
             _print_json(result)
             return 0
 
@@ -325,7 +344,13 @@ def main() -> int:
                     window_days=args.days,
                 )
             if args.build_activity_summaries:
-                result["activity_summaries"] = coach_service.build_activity_summaries()
+                start_date = (
+                    parse_iso_date(args.end_date) - timedelta(days=args.days - 1)
+                ).isoformat()
+                result["activity_summaries"] = coach_service.build_activity_summaries(
+                    start_date=start_date,
+                    end_date=args.end_date,
+                )
             _print_json(result)
             return 0
 
@@ -346,10 +371,17 @@ def main() -> int:
             return 0
 
         if args.command == "activities-build-summaries":
+            start_date = args.start_date
+            end_date = args.end_date
+            if args.date is not None:
+                start_date = args.date
+                end_date = args.date
             _print_json(
                 coach_service.build_activity_summaries(
                     activity_id=args.activity_id,
                     limit=args.limit,
+                    start_date=start_date,
+                    end_date=end_date,
                 )
             )
             return 0
