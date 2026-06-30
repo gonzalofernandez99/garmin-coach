@@ -18,6 +18,7 @@ from .storage.sqlite_store import SqliteIndex
 from .sync.activities import ActivitySyncService
 from .sync.daily import DailySyncService
 from .utils.dates import parse_iso_date, today_utc
+from .workouts.cycling import CyclingWorkoutService
 from .workouts.running import RunningWorkoutService
 
 
@@ -79,6 +80,14 @@ def _build_running_workout_service(
     settings = load_settings(env_file=env_file)
     configure_logging(settings)
     return RunningWorkoutService(settings), GarminCoachClient(settings)
+
+
+def _build_cycling_workout_service(
+    env_file: str | None,
+) -> tuple[CyclingWorkoutService, GarminCoachClient]:
+    settings = load_settings(env_file=env_file)
+    configure_logging(settings)
+    return CyclingWorkoutService(settings), GarminCoachClient(settings)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -298,6 +307,98 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optional Garmin calendar date in YYYY-MM-DD. Implies --upload.",
     )
 
+    cycling_workout = subparsers.add_parser(
+        "workout-create-cycling-intervals",
+        parents=[parent],
+        help="Create a Garmin cycling interval workout, optionally upload and schedule it",
+    )
+    cycling_workout.add_argument(
+        "--name",
+        default=None,
+        help="Optional workout name. Defaults to a name derived from the workout spec.",
+    )
+    cycling_workout.add_argument(
+        "--warmup",
+        default="15:00",
+        help="Warmup duration. Use MM:SS, HH:MM:SS or minutes as decimal. Defaults to 15:00.",
+    )
+    cycling_workout.add_argument(
+        "--warmup-target",
+        default=None,
+        help="Optional free-text warmup target, for example RPE 3/10 or cadence 85-95 rpm.",
+    )
+    cycling_workout.add_argument(
+        "--repeats",
+        type=int,
+        required=True,
+        help="Number of work intervals.",
+    )
+    cycling_workout.add_argument(
+        "--interval-duration",
+        required=True,
+        help="Duration of each work interval. Use MM:SS, HH:MM:SS or minutes as decimal.",
+    )
+    cycling_workout.add_argument(
+        "--interval-target",
+        default=None,
+        help="Optional free-text work interval target, for example RPE 7/10 or 220-250W.",
+    )
+    cycling_workout.add_argument(
+        "--recovery",
+        default="2:00",
+        help="Recovery between reps. Use MM:SS, HH:MM:SS or minutes as decimal. Defaults to 2:00.",
+    )
+    cycling_workout.add_argument(
+        "--recovery-target",
+        default=None,
+        help="Optional free-text recovery target.",
+    )
+    cycling_workout.add_argument(
+        "--keep-last-recovery",
+        action="store_true",
+        help="Keep the recovery step after the last work interval.",
+    )
+    cycling_workout.add_argument(
+        "--steady-duration",
+        default=None,
+        help="Optional steady aerobic block after the repeats. Use MM:SS, HH:MM:SS or minutes as decimal.",
+    )
+    cycling_workout.add_argument(
+        "--steady-target",
+        default=None,
+        help="Optional free-text target for the steady aerobic block.",
+    )
+    cycling_workout.add_argument(
+        "--cooldown",
+        default="10:00",
+        help="Cooldown duration. Use MM:SS, HH:MM:SS or minutes as decimal. Defaults to 10:00.",
+    )
+    cycling_workout.add_argument(
+        "--cooldown-target",
+        default=None,
+        help="Optional free-text cooldown target.",
+    )
+    cycling_workout.add_argument(
+        "--target",
+        default=None,
+        help="Optional legacy free-text target for work intervals. Prefer --interval-target.",
+    )
+    cycling_workout.add_argument(
+        "--description",
+        default=None,
+        help="Optional Garmin workout description.",
+    )
+    cycling_workout.add_argument(
+        "--upload",
+        action="store_true",
+        help="Upload the workout to Garmin Connect after generating the JSON file.",
+    )
+    cycling_workout.add_argument(
+        "--schedule-date",
+        default=None,
+        help="Optional Garmin calendar date in YYYY-MM-DD. Implies --upload.",
+    )
+
     return parser
 
 
@@ -406,6 +507,49 @@ def main() -> int:
                 pace_range=args.pace_range,
                 recovery=args.recovery,
                 cooldown_km=args.cooldown_km,
+                description=args.description,
+            )
+            result = workout_service.create_and_save(spec)
+            if args.upload or args.schedule_date:
+                upload_response = client.upload_workout(result["workout_payload"])
+                garmin_result: dict[str, Any] = {
+                    "upload_response": _summarize_workout_upload_response(
+                        upload_response
+                    ),
+                }
+                workout_id = upload_response.get("workoutId") or upload_response.get("id")
+                if args.schedule_date is not None:
+                    if workout_id is None:
+                        raise ValueError(
+                            "Garmin upload response did not include a workout id, so it cannot be scheduled."
+                        )
+                    garmin_result["schedule_response"] = _summarize_schedule_response(
+                        client.schedule_workout(
+                            workout_id,
+                            args.schedule_date,
+                        )
+                    )
+                result["garmin"] = garmin_result
+            _print_json(result)
+            return 0
+
+        if args.command == "workout-create-cycling-intervals":
+            workout_service, client = _build_cycling_workout_service(args.env_file)
+            spec = workout_service.parse_spec(
+                name=args.name,
+                warmup=args.warmup,
+                repeats=args.repeats,
+                interval_duration=args.interval_duration,
+                recovery=args.recovery,
+                cooldown=args.cooldown,
+                target=args.target,
+                warmup_target=args.warmup_target,
+                interval_target=args.interval_target,
+                recovery_target=args.recovery_target,
+                steady_duration=args.steady_duration,
+                steady_target=args.steady_target,
+                cooldown_target=args.cooldown_target,
+                skip_last_recovery=not args.keep_last_recovery,
                 description=args.description,
             )
             result = workout_service.create_and_save(spec)

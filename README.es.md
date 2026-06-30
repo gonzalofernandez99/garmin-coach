@@ -7,7 +7,7 @@
 - sincronizar datos de Garmin Connect en local
 - generar artefactos JSON deterministas
 - construir resúmenes y exports derivados
-- crear y subir entrenamientos de running a Garmin
+- crear y subir entrenamientos de running y bicicleta a Garmin
 
 ## Alcance
 
@@ -17,7 +17,7 @@ Funciones actuales:
 - sincronización diaria y por ventana de fechas
 - resúmenes por actividad
 - exports derivados de Garmin en niveles low / medium / full
-- generación, subida y programación opcional de workouts de running
+- generación, subida y programación opcional de workouts de running y bicicleta
 
 El proyecto está pensado para uso local. Guarda datos Garmin en disco para análisis personal y uso posterior.
 
@@ -194,6 +194,68 @@ garmin-coach workout-create-running-intervals \
   --schedule-date 2026-03-28
 ```
 
+Crear un workout de bicicleta y guardarlo localmente como JSON:
+
+```bash
+garmin-coach workout-create-cycling-intervals \
+  --name "Bici 5x4min Z4" \
+  --warmup 15:00 \
+  --repeats 5 \
+  --interval-duration 4:00 \
+  --recovery 2:00 \
+  --cooldown 10:00 \
+  --interval-target "Z4"
+```
+
+Crear el mismo workout de bicicleta y subirlo a Garmin Connect:
+
+```bash
+garmin-coach workout-create-cycling-intervals \
+  --name "Bici 5x4min Z4" \
+  --warmup 15:00 \
+  --repeats 5 \
+  --interval-duration 4:00 \
+  --recovery 2:00 \
+  --cooldown 10:00 \
+  --interval-target "Z4" \
+  --upload
+```
+
+Subirlo y programarlo para una fecha concreta del calendario Garmin:
+
+```bash
+garmin-coach workout-create-cycling-intervals \
+  --name "Bici 5x4min Z4" \
+  --warmup 15:00 \
+  --repeats 5 \
+  --interval-duration 4:00 \
+  --recovery 2:00 \
+  --cooldown 10:00 \
+  --interval-target "Z4" \
+  --upload \
+  --schedule-date 2026-03-28
+```
+
+Cargar un workout de bicicleta con bloque aeróbico separado y objetivos por paso:
+
+```bash
+garmin-coach workout-create-cycling-intervals \
+  --name "Bici 4x8 controlado + aerobico" \
+  --warmup 15:00 \
+  --warmup-target "Suave, RPE 3/10, cadencia 85-95 rpm" \
+  --repeats 4 \
+  --interval-duration 8:00 \
+  --interval-target "Fuerte controlado, RPE 7/10, sostenible, cadencia 85-95 rpm" \
+  --recovery 4:00 \
+  --recovery-target "Suave, RPE 3/10, recuperar bien" \
+  --keep-last-recovery \
+  --steady-duration 20:00 \
+  --steady-target "Zona comoda/media, RPE 5/10, sin apretar" \
+  --cooldown 10:00 \
+  --cooldown-target "Muy suave" \
+  --upload
+```
+
 Ver qué JSON se borrarían:
 
 ```bash
@@ -245,3 +307,6 @@ PYTHONPATH=src python -m unittest discover -s tests -v
 - la disponibilidad de métricas depende del dispositivo Garmin, la cuenta y el soporte real de cada endpoint
 - el sync intenta continuar aunque una métrica puntual no esté disponible
 - algunos recursos se superponen según el dispositivo, especialmente `stress` y `body_battery`
+
+
+garmin-coach sync-last-30-days --end-date 2026-06-10 --days 7 --build-exports --export-level medium --build-activity-summaries

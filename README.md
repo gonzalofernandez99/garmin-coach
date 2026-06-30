@@ -7,7 +7,7 @@ English | [Español](README.es.md)
 - sync Garmin Connect data locally
 - generate deterministic JSON artifacts
 - build derived summaries and exports
-- create and upload Garmin running workouts
+- create and upload Garmin running and cycling workouts
 
 ## Scope
 
@@ -17,7 +17,7 @@ Current features:
 - daily sync and rolling-window sync
 - per-activity summaries
 - Garmin-derived low / medium / full exports
-- running workout generation, upload, and optional scheduling
+- running and cycling workout generation, upload, and optional scheduling
 
 The project is local-first. It stores Garmin data on disk for personal analysis and downstream use.
 
@@ -192,6 +192,68 @@ garmin-coach workout-create-running-intervals \
   --cooldown-km 1-2 \
   --upload \
   --schedule-date 2026-03-28
+```
+
+Create a cycling workout and save it locally as JSON:
+
+```bash
+garmin-coach workout-create-cycling-intervals \
+  --name "Bike 5x4min Z4" \
+  --warmup 15:00 \
+  --repeats 5 \
+  --interval-duration 4:00 \
+  --recovery 2:00 \
+  --cooldown 10:00 \
+  --interval-target "Z4"
+```
+
+Create the same cycling workout and upload it to Garmin Connect:
+
+```bash
+garmin-coach workout-create-cycling-intervals \
+  --name "Bike 5x4min Z4" \
+  --warmup 15:00 \
+  --repeats 5 \
+  --interval-duration 4:00 \
+  --recovery 2:00 \
+  --cooldown 10:00 \
+  --interval-target "Z4" \
+  --upload
+```
+
+Upload it and schedule it on a Garmin calendar date:
+
+```bash
+garmin-coach workout-create-cycling-intervals \
+  --name "Bike 5x4min Z4" \
+  --warmup 15:00 \
+  --repeats 5 \
+  --interval-duration 4:00 \
+  --recovery 2:00 \
+  --cooldown 10:00 \
+  --interval-target "Z4" \
+  --upload \
+  --schedule-date 2026-03-28
+```
+
+Load a cycling workout with a separate aerobic block and step-specific targets:
+
+```bash
+garmin-coach workout-create-cycling-intervals \
+  --name "Bike 4x8 controlled + aerobic" \
+  --warmup 15:00 \
+  --warmup-target "Easy, RPE 3/10, cadence 85-95 rpm" \
+  --repeats 4 \
+  --interval-duration 8:00 \
+  --interval-target "Controlled hard, RPE 7/10, sustainable, cadence 85-95 rpm" \
+  --recovery 4:00 \
+  --recovery-target "Easy, RPE 3/10, recover well" \
+  --keep-last-recovery \
+  --steady-duration 20:00 \
+  --steady-target "Comfortable/medium zone, RPE 5/10, do not push" \
+  --cooldown 10:00 \
+  --cooldown-target "Very easy" \
+  --upload
 ```
 
 Preview JSON cleanup:
